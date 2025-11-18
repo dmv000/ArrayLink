@@ -1,27 +1,27 @@
 # PERSON 2: List Operations Implementer
 
 ## Your Assignment
-**File to create: `arrayBasedList.h`**  
+**File to create: `List.h`**  
 **Time estimate: 3-4 hours**
 
 ---
 
 ## Your Job (In Simple Terms)
-Use the node pool functions from Person 1 to build a complete linked list class. You'll implement the "guts" of the list: inserting, removing, searching, and displaying.
+Use the NodePool template class from Person 1 to build a complete linked list template class. You'll implement the "guts" of the list: inserting, removing, searching, and displaying.
 
----
+----
 
 ## Prerequisites
-⚠️ You NEED `nodePool.h` from Person 1 to be complete before you start.
+⚠️ You NEED `NodePool.h` from Person 1 to be complete before you start.
 
 Ask Person 1 to share their file with you!
 
 ---
 
 ## What You're Creating
-**File: `arrayBasedList.h`**
+**File: `List.h`**
 
-This file contains a class with 8 methods that make the list work.
+This file contains a template class with multiple methods that make the list work.
 
 ---
 
@@ -29,36 +29,77 @@ This file contains a class with 8 methods that make the list work.
 
 ### STEP 1: Set Up the Header File
 
-Create a new file called `arrayBasedList.h` and add this:
+Create a new file called `List.h` and add this:
 
 ```cpp
-#ifndef ARRAYBASEDLIST_H
-#define ARRAYBASEDLIST_H
+/*-- List.h -----------------------------------------------------------------
+  This header file defines a template for a List data type, implemented
+  using a NodePool memory model.
 
-#include "nodePool.h"  // You need this from Person 1!
+  Template Parameters:
+    - ElementType: Type of data stored in list nodes.
+    - NUM_NODES: Maximum number of nodes allowed in the list.
 
-class ArrayBasedList {
-private:
-    int first;  // Index of the first node in the list (NOT a pointer!)
-    
+  Basic operations:
+    constructor:        Constructs an empty list
+    copy constructor:   Makes a deep copy of a list
+    destructor:         Deallocates list nodes
+    = :                 Assignment operator
+    insertAtPos:        Inserts a value at a specified position
+    deleteAtPos:        Deletes a value at a specified position
+    getSize:            Returns the number of elements
+    isEmpty:            Checks if the list is empty
+    isFull:             Checks if the list is full
+    sort:               Sorts the list elements
+    display:            Displays the list elements
+    clear:              Clears the list
+    getTop:             Returns the head index
+    getFFN:             Returns the first free node index
+    search:             Searches for a value in the list
+
+  Class Invariant:
+    1. List elements are stored in a fixed-size NodePool.
+    2. head is the index of the first node, or NULL_VALUE if list is empty.
+    3. size represents the current number of elements in the list.
+---------------------------------------------------------------------------*/
+
+#ifndef LIST_H
+#define LIST_H
+
+#include <iostream>
+#include "NodePool.h"
+
+template <typename ElementType, int NUM_NODES>
+class List {
 public:
-    // Constructor
-    ArrayBasedList();
+    List();
+    ~List();
+    List(const List& other);
+    List& operator=(const List& other);
     
-    // Destructor
-    ~ArrayBasedList();
-    
-    // Basic operations
-    bool isEmpty();
-    void display();
-    int search(ElementType data);
-    bool insert(ElementType data, int position);
-    bool remove(int position);
-    
-    // Advanced operation
-    ArrayBasedList& operator=(const ArrayBasedList& other);
+    void insertAtPos(const ElementType& value, int position);
+    void deleteAtPos(int position);
+    int getSize() const;
+    bool isEmpty() const;
+    bool isFull() const;
+    void sort();
+    void display() const;
+    void clear();
+    int getTop() const;
+    int getFFN();
+    int search(const ElementType& value) const;
+
+private:
+    NodePool<ElementType, NUM_NODES> nodePool; // Memory pool of nodes
+    int head;                                  // Index of the first node
+    int size;                                  // Current size of the list
 };
 ```
+
+**What this means:** 
+- This is a **template class** that uses the NodePool template
+- `head` is an integer index (NOT a pointer!)
+- The NodePool is a **private member** of the class
 
 ---
 
@@ -67,18 +108,12 @@ public:
 **Purpose:** Create an empty list
 
 ```cpp
-/**
- * Constructor
- * Purpose: Creates an empty list
- * How it works: Sets first to NULL_VALUE (meaning no nodes in list)
- */
-ArrayBasedList::ArrayBasedList() {
-    first = NULL_VALUE;  // Empty list
-    cout << "✓ New empty list created" << endl;
-}
+// Definition of List constructor
+template <typename ElementType, int NUM_NODES>
+List<ElementType, NUM_NODES>::List() : head(NULL_VALUE), size(0) {}
 ```
 
-**Simple explanation:** `first = NULL_VALUE` means "this list has nothing in it yet."
+**Simple explanation:** `head = NULL_VALUE` and `size = 0` means "this list has nothing in it yet."
 
 ---
 
@@ -87,271 +122,191 @@ ArrayBasedList::ArrayBasedList() {
 **Purpose:** Check if the list is empty
 
 ```cpp
-/**
- * Function: isEmpty
- * Returns: true if list is empty, false otherwise
- * How it works: Empty list means first == NULL_VALUE
- */
-bool ArrayBasedList::isEmpty() {
-    return (first == NULL_VALUE);
+// Definition of isEmpty function
+template <typename ElementType, int NUM_NODES>
+bool List<ElementType, NUM_NODES>::isEmpty() const {
+    return (size == 0);
 }
 ```
 
-**Simple explanation:** If `first` is -1, there's nothing in the list.
+**Simple explanation:** If `size` is 0, there's nothing in the list.
 
 ---
 
-### STEP 4: display()
+### STEP 4: isFull()
+
+**Purpose:** Check if the list is full
+
+```cpp
+// Definition of isFull function
+template <typename ElementType, int NUM_NODES>
+bool List<ElementType, NUM_NODES>::isFull() const {
+    return size == NUM_NODES;
+}
+```
+
+---
+
+### STEP 5: getSize()
+
+**Purpose:** Get the current number of elements
+
+```cpp
+// Definition of getSize function
+template <typename ElementType, int NUM_NODES>
+int List<ElementType, NUM_NODES>::getSize() const {
+    return size;
+}
+```
+
+---
+
+### STEP 6: display()
 
 **Purpose:** Print all elements in the list
 
 ```cpp
-/**
- * Function: display
- * Purpose: Shows all elements in order
- * How it works: Start at first, follow the next links until NULL_VALUE
- */
-void ArrayBasedList::display() {
-    if (isEmpty()) {
-        cout << "List is EMPTY" << endl;
+// Definition of display function
+template <typename ElementType, int NUM_NODES>
+void List<ElementType, NUM_NODES>::display() const {
+    int current = head;
+    if (current == NULL_VALUE) {
+        std::cerr << "The list is empty. Nothing to display." << std::endl;
         return;
     }
-    
-    cout << "List contents: ";
-    int current = first;  // Start at first node
-    
+
+    int index = 1;
     while (current != NULL_VALUE) {
-        cout << node[current].data;  // Print data at current index
-        current = node[current].next;  // Move to next node
-        if (current != NULL_VALUE) cout << " -> ";
+        std::cout << "[" << index++ << "]: " << nodePool.getNodeConst(current).data << " ";
+        current = nodePool.getNodeConst(current).next; // Move to next node
     }
-    cout << " -> NULL" << endl;
-    
-    // Also show the index chain (helpful for debugging)
-    cout << "Index chain: first=" << first;
-    current = first;
-    while (current != NULL_VALUE) {
-        cout << " -> [" << current << "]";
-        current = node[current].next;
-    }
-    cout << " -> NULL" << endl;
+    std::cout << std::endl;
 }
 ```
 
 **Simple explanation:** 
-- Start at `first`
-- Print the data at that index
+- Start at `head`
+- Print the data at that index using `nodePool.getNodeConst()`
 - Move to the next index
 - Repeat until you hit -1 (NULL_VALUE)
 
 ---
 
-### STEP 5: insert() - THE MOST IMPORTANT FUNCTION
+### STEP 7: insertAtPos() - THE MOST IMPORTANT FUNCTION
 
-**Purpose:** Add new data at a specific position
+**Purpose:** Add new data at a specific position (1-based indexing!)
 
 ⚠️ **This is the MOST CRITICAL function - read carefully!**
 
-This function has TWO cases:
-
 ```cpp
-/**
- * Function: insert
- * Purpose: Inserts new data at specified position (0 = beginning)
- * Parameters:
- *   - data: the value to insert
- *   - position: where to insert (0-based index)
- * Returns: true if successful, false if failed
- */
-bool ArrayBasedList::insert(ElementType data, int position) {
-    // Validate position
-    if (position < 0) {
-        cout << "✗ ERROR: Position cannot be negative" << endl;
-        return false;
+// Definition of insertAtPos function
+template <typename ElementType, int NUM_NODES>
+void List<ElementType, NUM_NODES>::insertAtPos(const ElementType& value, int position) {
+    if (position < 1 || position > size + 1) {
+        std::cerr << "Invalid position. Use 1 to " << (size + 1) << "." << std::endl;
+        return;
     }
-    
-    // CASE 1: Insert at position 0 (beginning of list)
-    if (position == 0) {
-        // Get a free node
-        int newIndex = allocate();
-        if (newIndex == NULL_VALUE) {
-            cout << "✗ ERROR: Pool is full, cannot insert" << endl;
-            return false;
+
+    int newNodeIndex = nodePool.allocate(); // Allocate new node
+    if (newNodeIndex == NULL_VALUE) return;
+
+    nodePool.getNode(newNodeIndex).data = value; // Store value
+
+    if (position == 1) { // Inserting at head
+        nodePool.getNode(newNodeIndex).next = head;
+        head = newNodeIndex;
+    } else { // Inserting elsewhere
+        int prev = head;
+        for (int i = 1; i < position - 1; ++i) {
+            prev = nodePool.getNode(prev).next; // Find previous node
         }
-        
-        // Fill the new node
-        node[newIndex].data = data;
-        node[newIndex].next = first;  // New node points to old first
-        
-        // Update list to start at new node
-        first = newIndex;
-        
-        cout << "✓ Inserted '" << data << "' at position 0" << endl;
-        return true;
+        nodePool.getNode(newNodeIndex).next = nodePool.getNode(prev).next;
+        nodePool.getNode(prev).next = newNodeIndex;
     }
-    
-    // CASE 2: Insert at position > 0 (after some nodes)
-    else {
-        // Get a free node
-        int newIndex = allocate();
-        if (newIndex == NULL_VALUE) {
-            cout << "✗ ERROR: Pool is full, cannot insert" << endl;
-            return false;
-        }
-        
-        // Find the node BEFORE where we want to insert
-        int current = first;
-        for (int i = 0; i < position - 1; i++) {
-            if (current == NULL_VALUE) {
-                cout << "✗ ERROR: Position " << position << " is out of bounds" << endl;
-                deallocate(newIndex);  // Give back the node we got
-                return false;
-            }
-            current = node[current].next;
-        }
-        
-        // Check if we went too far
-        if (current == NULL_VALUE) {
-            cout << "✗ ERROR: Position " << position << " is out of bounds" << endl;
-            deallocate(newIndex);
-            return false;
-        }
-        
-        // Insert the new node after 'current'
-        node[newIndex].data = data;
-        node[newIndex].next = node[current].next;  // ⚠️ IMPORTANT: Do this FIRST!
-        node[current].next = newIndex;              // Then update predecessor
-        
-        cout << "✓ Inserted '" << data << "' at position " << position << endl;
-        return true;
-    }
+
+    ++size; // Increase list size
 }
 ```
 
-**🚨 CRITICAL ORDER (for position > 0):**
-1. **FIRST:** `node[newIndex].next = node[current].next;` (save rest of list)
-2. **SECOND:** `node[current].next = newIndex;` (link new node in)
+**🚨 CRITICAL ORDER (for position > 1):**
+1. **FIRST:** `nodePool.getNode(newNodeIndex).next = nodePool.getNode(prev).next;` (save rest of list)
+2. **SECOND:** `nodePool.getNode(prev).next = newNodeIndex;` (link new node in)
 
 **Why this order matters:**
 ```
 WRONG ORDER (loses data!):
-1. node[current].next = newIndex;  ← This breaks the link to rest of list!
-2. node[newIndex].next = node[current].next;  ← Too late, the link is lost!
+1. nodePool.getNode(prev).next = newNodeIndex;  ← This breaks the link to rest of list!
+2. nodePool.getNode(newNodeIndex).next = nodePool.getNode(prev).next;  ← Too late!
 
 RIGHT ORDER (preserves data):
-1. node[newIndex].next = node[current].next;  ← Save the rest of list first
-2. node[current].next = newIndex;  ← Now safe to update
+1. nodePool.getNode(newNodeIndex).next = nodePool.getNode(prev).next;  ← Save first
+2. nodePool.getNode(prev).next = newNodeIndex;  ← Now safe to update
 ```
 
 ---
 
-### STEP 6: remove()
+### STEP 8: deleteAtPos()
 
-**Purpose:** Delete a node at a specific position
+**Purpose:** Delete a node at a specific position (1-based indexing!)
 
 ```cpp
-/**
- * Function: remove
- * Purpose: Removes node at specified position
- * Parameters: position - which node to remove (0-based)
- * Returns: true if successful, false if failed
- */
-bool ArrayBasedList::remove(int position) {
-    // Check if list is empty
+// Definition of deleteAtPos function
+template <typename ElementType, int NUM_NODES>
+void List<ElementType, NUM_NODES>::deleteAtPos(int position) {
     if (isEmpty()) {
-        cout << "✗ ERROR: Cannot remove from empty list" << endl;
-        return false;
+        std::cerr << "List is empty." << std::endl;
+        return;
     }
-    
-    if (position < 0) {
-        cout << "✗ ERROR: Position cannot be negative" << endl;
-        return false;
+
+    if (position < 1 || position > size) {
+        std::cerr << "Invalid position. Use 1 to " << size << "." << std::endl;
+        return;
     }
-    
-    // CASE 1: Remove position 0 (first node)
-    if (position == 0) {
-        int temp = first;                    // Remember which node to delete
-        first = node[first].next;            // Move first to next node
-        deallocate(temp);                    // Return node to free pool
-        
-        cout << "✓ Removed node at position 0" << endl;
-        return true;
-    }
-    
-    // CASE 2: Remove position > 0
-    else {
-        // Find the node BEFORE the one to delete
-        int current = first;
-        for (int i = 0; i < position - 1; i++) {
-            if (current == NULL_VALUE || node[current].next == NULL_VALUE) {
-                cout << "✗ ERROR: Position " << position << " is out of bounds" << endl;
-                return false;
-            }
-            current = node[current].next;
+
+    int toDelete;
+    if (position == 1) { // Deleting head node
+        toDelete = head;
+        head = nodePool.getNode(head).next;
+    } else { // Deleting non-head node
+        int prev = head;
+        for (int i = 1; i < position - 1; ++i) {
+            prev = nodePool.getNode(prev).next; // Find previous node
         }
-        
-        // Check if the node to delete exists
-        int temp = node[current].next;
-        if (temp == NULL_VALUE) {
-            cout << "✗ ERROR: Position " << position << " is out of bounds" << endl;
-            return false;
-        }
-        
-        // Bypass the node to delete
-        node[current].next = node[temp].next;  // Link around the deleted node
-        deallocate(temp);                       // Return it to free pool
-        
-        cout << "✓ Removed node at position " << position << endl;
-        return true;
+        toDelete = nodePool.getNode(prev).next; // Node to be deleted
+        nodePool.getNode(prev).next = nodePool.getNode(toDelete).next; // Bypass the node
     }
+
+    nodePool.deallocate(toDelete); // Free node
+    --size; // Decrease list size
 }
 ```
 
 **Simple explanation:**
-- To delete position 0: Move `first` to the next node, free the old first
-- To delete position > 0: Find the node before it, link around it, free it
-
-**Visual Example:**
-```
-BEFORE: first=7, [Brown(7)] -> [Jones(1)] -> [Smith(3)] -> NULL
-Remove position 1 (Jones):
-
-Step 1: Find node before position 1 → current = 7 (Brown)
-Step 2: temp = node[7].next = 1 (Jones)
-Step 3: node[7].next = node[1].next = 3 (Brown now points to Smith)
-Step 4: deallocate(1) (Return Jones to free pool)
-
-AFTER: first=7, [Brown(7)] -> [Smith(3)] -> NULL
-```
+- To delete position 1: Move `head` to the next node, deallocate the old head
+- To delete position > 1: Find the node before it, link around it, deallocate it
 
 ---
 
-### STEP 7: search()
+### STEP 9: search()
 
-**Purpose:** Find where a value is in the list
+**Purpose:** Find where a value is in the list (returns 1-based position!)
 
 ```cpp
-/**
- * Function: search
- * Purpose: Finds a value in the list
- * Parameters: data - the value to search for
- * Returns: Position where found (0-based), or -1 if not found
- */
-int ArrayBasedList::search(ElementType data) {
-    int current = first;
-    int position = 0;
-    
+// Definition of search function
+template <typename ElementType, int NUM_NODES>
+int List<ElementType, NUM_NODES>::search(const ElementType& value) const {
+    int current = head;
+    int position = 1;
+
     while (current != NULL_VALUE) {
-        if (node[current].data == data) {
-            cout << "✓ Found '" << data << "' at position " << position << endl;
-            return position;
+        if (nodePool.getNodeConst(current).data == value) {
+            return position; // Found the value
         }
-        current = node[current].next;
-        position++;
+        current = nodePool.getNodeConst(current).next;
+        ++position;
     }
-    
-    cout << "✗ '" << data << "' not found in list" << endl;
-    return -1;  // Not found
+
+    return -1; // Value not found
 }
 ```
 
@@ -359,107 +314,80 @@ int ArrayBasedList::search(ElementType data) {
 
 ---
 
-### STEP 8: Destructor
+### STEP 10: clear()
+
+**Purpose:** Remove all elements from the list
+
+```cpp
+// Definition of clear function
+template <typename ElementType, int NUM_NODES>
+void List<ElementType, NUM_NODES>::clear() {
+    while (!isEmpty()) {
+        deleteAtPos(1); // Keep deleting head until empty
+    }
+}
+```
+
+---
+
+### STEP 11: Destructor
 
 **Purpose:** Clean up when the list is destroyed (prevents memory leaks)
 
 ```cpp
-/**
- * Destructor
- * Purpose: Returns all nodes in this list back to the free pool
- * How it works: Walks through list and deallocates every node
- * IMPORTANT: This prevents "memory leaks" in our simulated system
- */
-ArrayBasedList::~ArrayBasedList() {
-    int current = first;
-    
-    while (current != NULL_VALUE) {
-        int temp = current;              // Remember current node
-        current = node[current].next;    // Move to next node
-        deallocate(temp);                // Free the remembered node
-    }
-    
-    first = NULL_VALUE;
-    cout << "✓ List destroyed, all nodes returned to pool" << endl;
+// Definition of List destructor
+template <typename ElementType, int NUM_NODES>
+List<ElementType, NUM_NODES>::~List() {
+    clear();
 }
 ```
 
-**Simple explanation:** Walk through the entire list and call `deallocate()` on every node.
+**Simple explanation:** Use the clear() method to deallocate all nodes.
 
 ---
 
-### STEP 9: operator= (Copy Assignment)
+### STEP 12: Copy Constructor
+
+**Purpose:** Make a deep copy when creating a new list from another
+
+```cpp
+// Definition of List copy constructor
+template <typename ElementType, int NUM_NODES>
+List<ElementType, NUM_NODES>::List(const List& other) : head(NULL_VALUE), size(0) {
+    int current = other.head;
+    while (current != NULL_VALUE) {
+        insertAtPos(other.nodePool.getNodeConst(current).data, size + 1); // Insert each node's data
+        current = other.nodePool.getNodeConst(current).next; // Move to next node
+    }
+}
+```
+
+---
+
+### STEP 13: operator= (Copy Assignment)
 
 **Purpose:** Make a deep copy of another list
 
 ```cpp
-/**
- * Function: operator=
- * Purpose: Makes a complete copy of another list
- * IMPORTANT: Must allocate NEW nodes and copy data (not just copy indices!)
- */
-ArrayBasedList& ArrayBasedList::operator=(const ArrayBasedList& other) {
-    // Check for self-assignment (list1 = list1)
-    if (this == &other) {
-        return *this;
-    }
-    
-    // Step 1: Clear current list (deallocate all nodes)
-    int current = first;
-    while (current != NULL_VALUE) {
-        int temp = current;
-        current = node[current].next;
-        deallocate(temp);
-    }
-    first = NULL_VALUE;
-    
-    // Step 2: If source is empty, we're done
-    if (other.first == NULL_VALUE) {
-        return *this;
-    }
-    
-    // Step 3: Copy first node
-    first = allocate();
-    if (first == NULL_VALUE) {
-        cout << "✗ ERROR: Pool exhausted during copy" << endl;
-        return *this;
-    }
-    node[first].data = node[other.first].data;
-    
-    // Step 4: Copy remaining nodes
-    int currentThis = first;
-    int currentOther = node[other.first].next;
-    
-    while (currentOther != NULL_VALUE) {
-        int newIndex = allocate();
-        if (newIndex == NULL_VALUE) {
-            cout << "✗ ERROR: Pool exhausted during copy" << endl;
-            return *this;
+// Definition of List assignment operator
+template <typename ElementType, int NUM_NODES>
+List<ElementType, NUM_NODES>& List<ElementType, NUM_NODES>::operator=(const List& other) {
+    if (this != &other) { // Check for self-assignment
+        clear(); // Clear existing list
+        int current = other.head;
+        while (current != NULL_VALUE) {
+            insertAtPos(other.nodePool.getNodeConst(current).data, size + 1); // Insert copied data
+            current = other.nodePool.getNodeConst(current).next;
         }
-        
-        node[newIndex].data = node[currentOther].data;
-        node[currentThis].next = newIndex;
-        
-        currentThis = newIndex;
-        currentOther = node[currentOther].next;
     }
-    
-    node[currentThis].next = NULL_VALUE;
-    cout << "✓ List copied successfully" << endl;
     return *this;
 }
 ```
 
-**Simple explanation:**
-1. Clear the current list
-2. Walk through the other list
-3. Allocate new nodes and copy data values
-4. Link them together
-
 **⚠️ CRITICAL MISTAKE TO AVOID:**
 ```cpp
 ❌ WRONG WAY:
-this->first = other.first;  // Both lists share same nodes!
+this->head = other.head;  // Both lists share same nodes!
 
 ✅ RIGHT WAY:
 // Allocate new nodes and copy data (see algorithm above)
@@ -467,12 +395,55 @@ this->first = other.first;  // Both lists share same nodes!
 
 ---
 
-### STEP 10: Close the Header File
+### STEP 14: Helper Methods
+
+```cpp
+// Definition of getTop function
+template <typename ElementType, int NUM_NODES>
+int List<ElementType, NUM_NODES>::getTop() const {
+    return head;
+}
+
+// Definition of getFFN function
+template <typename ElementType, int NUM_NODES>
+int List<ElementType, NUM_NODES>::getFFN() {
+    return nodePool.getFFN();
+}
+```
+
+---
+
+### STEP 15: sort() (Optional but Useful)
+
+```cpp
+// Definition of sort function
+template <typename ElementType, int NUM_NODES>
+void List<ElementType, NUM_NODES>::sort() {
+    if (size < 2) return; // No need to sort if list is too small
+
+    for (int i = 0; i < size - 1; ++i) {
+        int current = head;
+        int nextNode = nodePool.getNode(current).next;
+
+        for (int j = 0; j < size - i - 1; ++j) {
+            if (nodePool.getNode(current).data > nodePool.getNode(nextNode).data) {
+                std::swap(nodePool.getNode(current).data, nodePool.getNode(nextNode).data); // Swap if needed
+            }
+            current = nextNode;
+            nextNode = nodePool.getNode(current).next;
+        }
+    }
+}
+```
+
+---
+
+### STEP 16: Close the Header File
 
 Add this at the very end:
 
 ```cpp
-#endif // ARRAYBASEDLIST_H
+#endif
 ```
 
 ---
@@ -482,33 +453,32 @@ Add this at the very end:
 Create `test_list.cpp`:
 
 ```cpp
-#include "nodePool.h"
-#include "arrayBasedList.h"
+#include "NodePool.h"
+#include "List.h"
+#include <iostream>
+using namespace std;
 
 int main() {
-    cout << "=== Testing ArrayBasedList ===" << endl;
+    cout << "=== Testing List ===" << endl;
     
-    // Initialize the pool first!
-    initializePool();
-    
-    // Create a list
-    ArrayBasedList list;
+    // Create a list of strings with capacity 100
+    List<string, 100> list;
     
     // Test insert
     cout << "\n--- Testing Insert ---" << endl;
-    list.insert("Alice", 0);
-    list.insert("Bob", 1);
-    list.insert("Charlie", 2);
+    list.insertAtPos("Alice", 1);
+    list.insertAtPos("Bob", 2);
+    list.insertAtPos("Charlie", 3);
     list.display();
     
     // Test search
     cout << "\n--- Testing Search ---" << endl;
-    list.search("Bob");
-    list.search("David");
+    int pos = list.search("Bob");
+    cout << "Bob found at position: " << pos << endl;
     
-    // Test remove
-    cout << "\n--- Testing Remove ---" << endl;
-    list.remove(1);  // Remove Bob
+    // Test delete
+    cout << "\n--- Testing Delete ---" << endl;
+    list.deleteAtPos(2);  // Remove Bob
     list.display();
     
     // Test isEmpty
@@ -521,7 +491,7 @@ int main() {
 
 **Compile and run:**
 ```bash
-g++ test_list.cpp -o test_list
+g++ -std=c++11 test_list.cpp -o test_list
 ./test_list
 ```
 
@@ -529,67 +499,60 @@ g++ test_list.cpp -o test_list
 
 ## 📝 Summary - What You Need to Deliver
 
-**File: `arrayBasedList.h`** containing:
-- ✅ ArrayBasedList class definition
+**File: `List.h`** containing:
+- ✅ Template class definition
 - ✅ Constructor and Destructor
-- ✅ isEmpty()
+- ✅ Copy Constructor
+- ✅ isEmpty(), isFull(), getSize()
 - ✅ display()
-- ✅ insert() - handles both position 0 and position > 0
-- ✅ remove() - handles both position 0 and position > 0
+- ✅ insertAtPos() - handles both position 1 and position > 1
+- ✅ deleteAtPos() - handles both position 1 and position > 1
 - ✅ search()
+- ✅ clear()
 - ✅ operator=()
+- ✅ sort() (optional)
+- ✅ All implementations inline in the header file
 
 ---
 
 ## 🐛 Common Mistakes to Avoid
 
-### Mistake 1: Wrong link update order in insert()
+### Mistake 1: Forgetting template syntax
+❌ Wrong: `class List {`
+✅ Correct: `template <typename ElementType, int NUM_NODES> class List {`
+
+### Mistake 2: Wrong link update order in insertAtPos()
 ❌ Wrong:
 ```cpp
-node[current].next = newIndex;          // Breaks link to rest!
-node[newIndex].next = node[current].next;  // Too late!
+nodePool.getNode(prev).next = newIndex;          // Breaks link to rest!
+nodePool.getNode(newIndex).next = nodePool.getNode(prev).next;  // Too late!
 ```
 ✅ Correct:
 ```cpp
-node[newIndex].next = node[current].next;  // Save rest first!
-node[current].next = newIndex;             // Then update
+nodePool.getNode(newIndex).next = nodePool.getNode(prev).next;  // Save rest first!
+nodePool.getNode(prev).next = newIndex;             // Then update
 ```
 
-### Mistake 2: Not deallocating removed nodes
+### Mistake 3: Not deallocating removed nodes
 ❌ Wrong:
 ```cpp
-first = node[first].next;  // Just moves pointer - leaks node!
+head = nodePool.getNode(head).next;  // Just moves pointer - leaks node!
 ```
 ✅ Correct:
 ```cpp
-temp = first;
-first = node[first].next;
-deallocate(temp);  // Return to pool!
+temp = head;
+head = nodePool.getNode(head).next;
+nodePool.deallocate(temp);  // Return to pool!
 ```
 
-### Mistake 3: Shallow copy in operator=
+### Mistake 4: Accessing nodePool array directly
 ❌ Wrong:
 ```cpp
-this->first = other.first;  // Shares nodes!
+nodePool.nodepool[i].data = value;  // Accessing private member!
 ```
 ✅ Correct:
 ```cpp
-// Allocate NEW nodes and copy data
-```
-
-### Mistake 4: Not checking allocate() result
-❌ Wrong:
-```cpp
-int newIndex = allocate();
-node[newIndex].data = value;  // Crashes if allocate() returned -1!
-```
-✅ Correct:
-```cpp
-int newIndex = allocate();
-if (newIndex == NULL_VALUE) {
-    return false;  // Handle error
-}
-node[newIndex].data = value;
+nodePool.getNode(i).data = value;  // Use public accessor!
 ```
 
 ---
@@ -598,7 +561,7 @@ node[newIndex].data = value;
 
 1. Make sure your file compiles without errors
 2. Run the test program and verify it works
-3. Share `arrayBasedList.h` with Person 3
+3. Share `List.h` with Person 3
 4. **Important:** Person 3 needs your file before they can complete the project!
 
 ---
@@ -607,9 +570,8 @@ node[newIndex].data = value;
 
 Before submitting, make sure you can answer:
 1. Why must we update links in a specific order during insert? (Answer: To not lose references to the rest of the list)
-2. What's the difference between `first = node[first].next` and proper node removal? (Answer: Proper removal also calls deallocate())
-3. Why can't we just copy `first` in operator=? (Answer: Would create shallow copy sharing nodes)
+2. What's the difference between `head = nodePool.getNode(head).next` and proper node removal? (Answer: Proper removal also calls deallocate())
+3. Why can't we just copy `head` in operator=? (Answer: Would create shallow copy sharing nodes)
+4. Why is position 1-based instead of 0-based? (Answer: Convention for this implementation - user-friendly)
 
 ---
-
-
