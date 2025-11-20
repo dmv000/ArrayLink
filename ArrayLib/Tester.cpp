@@ -45,10 +45,10 @@ int main() {
     IntList myList;
     int mainChoice;
     
-    cout << "\n================================================\n";
+    cout << "\n-----------------------------------------\n";
     cout << "  ARRAY-BASED LIST TESTING SUITE\n";
     cout << "  1-based indexing | Pool Size: " << POOL_SIZE << "\n";
-    cout << "================================================\n";
+    cout << "-----------------------------------------\n";
 
     do {
         showMainMenu();
@@ -202,10 +202,10 @@ void showListContents(const IntList& list) {
   Stress Test
 ---------------------------------------------------------------------*/
 void runStressTest(IntList& list) {
-    cout << "\n=========================================\n";
+    cout << "\n-----------------------------------------\n";
     cout << "            STRESS TEST\n";
     cout << "  This will test edge cases and boundary conditions\n";
-    cout << "=========================================\n\n";
+    cout << "-----------------------------------------\n\n";
     
     // Fill to its max capacity
     cout << "Testing: Filling list to capacity\n";
@@ -249,9 +249,9 @@ void runStressTest(IntList& list) {
     pos = list.search(999);
     cout << "Search for 999: " << (pos == -1 ? "Not found" : "Found at position " + to_string(pos)) << "\n";
     
-    cout << "\n=========================================\n";
+    cout << "\n-----------------------------------------\n";
     cout << "       STRESS TEST COMPLETED\n";
-    cout << "=========================================\n";
+    cout << "-----------------------------------------\n";
 }
 
 /*---------------------------------------------------------------------
